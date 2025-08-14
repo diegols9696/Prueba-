@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GAP × Kinetic · Reporte Mensual (Mock HTML)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{--kinetic:#1d4ed8;--kineticLight:#60a5fa;--accent:#0ea5e9}
+    html,body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:1rem;padding:1rem}
+    .tab-active{background:#fff;color:#111827;border-color:#c7d2fe}
+    .chip{border:1px solid #e5e7eb;border-radius:9999px;padding:.375rem .75rem;font-weight:700}
+    @media print{.no-print{display:none !important} body{background:#fff}}
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-black text-gray-900">GAP × Kinetic · Reporte Mensual (Mock)</h1>
+        <p class="text-gray-600">Dashboard de métricas clave para envíos mensuales. Selecciona mes y categoría.</p>
+      </div>
+      <div class="flex items-center gap-2 no-print">
+        <select id="monthSelect" class="border rounded-xl px-3 py-2 text-sm"></select>
+        <button id="btnPrint" class="px-4 py-2 rounded-xl bg-[color:var(--kinetic)] text-white font-semibold hover:opacity-90">Descargar / PDF</button>
+      </div>
+    </header>
+
+    <!-- KPIs -->
+    <section class="grid grid-cols-2 md:grid-cols-6 gap-3" id="kpiRow"></section>
+
+    <!-- Tabs -->
+    <div class="no-print">
+      <div id="tabs" class="grid grid-cols-4 gap-2 bg-white p-1 rounded-2xl border">
+        <button data-tab="reservas" class="chip tab-active">Reservas</button>
+        <button data-tab="transacciones" class="chip">Transacciones</button>
+        <button data-tab="experiencia" class="chip">Experiencia</button>
+        <button data-tab="insights" class="chip">Insights Clave</button>
+      </div>
+    </div>
+
+    <!-- Panels -->
+    <section id="panel-reservas" class="space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card">
+          <h3 class="font-bold text-lg mb-2">Tendencia de Reservas (últimos 6 meses)</h3>
+          <canvas id="chartBookings"></canvas>
+        </div>
+        <div class="card">
+          <h3 class="font-bold text-lg mb-2">% de Reservas Anticipadas</h3>
+          <div class="grid grid-cols-2 gap-2 items-center">
+            <canvas id="chartPrebook" height="200"></canvas>
+            <div>
+              <p class="text-sm text-gray-600">Reservas anticipadas</p>
+              <p class="text-3xl font-black text-gray-900" id="prebookAbs">—</p>
+              <p class="text-xs text-gray-500" id="prebookBase">—</p>
+              <p class="text-sm text-gray-700 mt-3">Oportunidad: impulsar pre-reservas con promociones «Reserva y gana» (push + QR en pantallas).</p>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="font-bold text-lg mb-2">Descargas por Tienda</h3>
+          <canvas id="chartDownloadsSplit"></canvas>
+          <div class="grid grid-cols-2 text-center text-sm mt-2">
+            <div class="py-1"><span class="font-semibold">Google Play:</span> <span id="dlAndroid">—</span></div>
+            <div class="py-1"><span class="font-semibold">App Store:</span> <span id="dliOS">—</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-transacciones" class="space-y-4 hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card">
+          <h3 class="font-bold text-lg mb-2">Split de Pagos (Cash vs Tarjeta)</h3>
+          <canvas id="chartSplitCash"></canvas>
+        </div>
+        <div class="card">
+          <h3 class="font-bold text-lg mb-2">Descargas acumuladas</h3>
+          <canvas id="chartDownloadsAccum"></canvas>
+        </div>
+        <div class="card">
+          <h3 class="font-bold text-lg mb-2">Reservas vs Descargas (eficiencia)</h3>
+          <canvas id="chartResVsDown"></canvas>
+          <p class="text-sm text-gray-600 mt-2">Ratio actual: <span class="font-semibold" id="ratioConv">—</span> reservas por descarga.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-experiencia" class="space-y-4 hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="card">
+          <h3 class="font-bold text-lg mb-2">Puntualidad (≥96% meta)</h3>
+          <canvas id="chartPunctuality"></canvas>
+          <div class="text-sm text-gray-600 mt-2">Mes seleccionado: <span class="font-semibold" id="punctMonth">—</span></div>
+        </div>
+        <div class="card">
+          <h3 class="font-bold text-lg mb-2">Tiempo de Espera</h3>
+          <canvas id="chartWait"></canvas>
+          <div class="text-sm text-gray-600 mt-2">Mes seleccionado: <span class="font-semibold" id="waitMonth">—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-insights" class="space-y-4 hidden">
+      <div class="card">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-lg">Insights & Recomendaciones</h3>
+          <div class="text-xs text-gray-500">Marco AIDA</div>
+        </div>
+        <div id="insightsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+    </section>
+
+    <footer class="text-xs text-gray-500">* Datos simulados con fines de demostración. Para reporte real, se conectan fuentes (panel GAP, tiendas, pasarela de pagos).</footer>
+  </div>
+
+<script>
+// ---------------- Data -----------------
+const MONTHS = ["Oct 2025","Nov 2025","Dic 2025","Ene 2026","Feb 2026","Mar 2026"];
+const DATA = {
+  "Oct 2025": { downloads: { total: 1200, android: 720, ios: 480 }, bookings: 860, prebookRate: 0.32, wait: 14, ontime: 0.93, cashShare: 0.55 },
+  "Nov 2025": { downloads: { total: 3800, android: 2300, ios: 1500 }, bookings: 2200, prebookRate: 0.41, wait: 12, ontime: 0.95, cashShare: 0.48 },
+  "Dic 2025": { downloads: { total: 7200, android: 4300, ios: 2900 }, bookings: 4100, prebookRate: 0.47, wait: 10, ontime: 0.96, cashShare: 0.42 },
+  "Ene 2026": { downloads: { total: 11000, android: 6700, ios: 4300 }, bookings: 6000, prebookRate: 0.52, wait: 9, ontime: 0.965, cashShare: 0.38 },
+  "Feb 2026": { downloads: { total: 15000, android: 8900, ios: 6100 }, bookings: 7800, prebookRate: 0.56, wait: 8, ontime: 0.97, cashShare: 0.34 },
+  "Mar 2026": { downloads: { total: 20000, android: 11800, ios: 8200 }, bookings: 10000, prebookRate: 0.60, wait: 7, ontime: 0.975, cashShare: 0.30 }
+};
+
+// --------------- Helpers ---------------
+const $ = sel => document.querySelector(sel);
+function fmt(n){return n.toLocaleString('es-MX');}
+function buildInsights(key){
+  const m = DATA[key];
+  const preAbs = Math.round(m.bookings * m.prebookRate);
+  const cityShareToAirport = 0.50; // supuesto de ejemplo
+  return [
+    {stage:'Atención', text:`Este mes hubo ${fmt(m.bookings)} reservas; ${fmt(preAbs)} fueron anticipadas.`},
+    {stage:'Interés', text:'Los usuarios confían en programar desde origen: oportunidad para campañas de pre-reserva (push + QR en pantallas).'},
+    {stage:'Deseo', text:`El ${Math.round(cityShareToAirport*100)}% de los viajes fueron ciudad→aeropuerto: conviene fijar unidades en picos (6–8 a.m.) con incentivos dinámicos.`},
+    {stage:'Acción', text:`Meta operativa: puntualidad ≥ ${(m.ontime*100).toFixed(0)}% y espera ≤ ${Math.max(5, m.wait-1)} min con staging y despacho geo-inteligente.`}
+  ];
+}
+
+// --------------- Month Select ---------------
+const monthSelect = $('#monthSelect');
+MONTHS.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;monthSelect.appendChild(o);});
+monthSelect.value = 'Nov 2025';
+
+// --------------- KPIs ---------------
+const KPI_CFG = [
+  { key:'downloads.total', label:'Descargas' },
+  { key:'bookings', label:'Reservas' },
+  { key:'prebookRate', label:'% Anticipadas', pct:true },
+  { key:'wait', label:'Espera Prom.' , suffix:' min'},
+  { key:'ontime', label:'Puntualidad', pct:true },
+  { key:'cashShare', label:'% Efectivo', pct:true }
+];
+const kpiRow = $('#kpiRow');
+KPI_CFG.forEach(cfg=>{
+  const div = document.createElement('div');
+  div.className='bg-white rounded-2xl shadow-sm border p-4 flex items-center gap-3';
+  div.innerHTML = `<div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">📊</div>
+                   <div><div class="text-xs uppercase tracking-wide text-gray-500">${cfg.label}</div>
+                   <div class="text-2xl font-black text-gray-900" id="kpi-${cfg.key.replace('.','-')}">—</div></div>`;
+  kpiRow.appendChild(div);
+});
+
+function setKpis(key){
+  const m = DATA[key];
+  const map = {
+    'downloads-total': m.downloads.total,
+    'bookings': m.bookings,
+    'prebookRate': (m.prebookRate*100).toFixed(0)+'%',
+    'wait': m.wait+' min',
+    'ontime': (m.ontime*100).toFixed(1)+'%',
+    'cashShare': (m.cashShare*100).toFixed(0)+'%'
+  };
+  Object.entries(map).forEach(([id,val])=>{
+    const el = document.getElementById('kpi-'+id);
+    if(el) el.textContent = typeof val==='number'?fmt(val):val;
+  });
+}
+
+// --------------- Charts (init once) ---------------
+const bookingsCtx = document.getElementById('chartBookings');
+const chartBookings = new Chart(bookingsCtx,{ type:'line', data:{ labels: MONTHS, datasets:[{ label:'Reservas', data: MONTHS.map(m=>DATA[m].bookings), borderColor: getComputedStyle(document.documentElement).getPropertyValue('--kinetic'), backgroundColor: 'rgba(29,78,216,0.2)', tension:.35, fill:true, borderWidth:3 }]}, options:{ responsive:true, scales:{ y:{ beginAtZero:false } }, plugins:{ legend:{ display:false } } });
+
+const prebookCtx = document.getElementById('chartPrebook');
+const chartPrebook = new Chart(prebookCtx,{ type:'doughnut', data:{ labels:['% Anticipadas','Restante'], datasets:[{ data:[50,50], backgroundColor:['#1d4ed8','#e5e7eb'], borderWidth:0 }]}, options:{ cutout:'60%', plugins:{ legend:{ display:false } } });
+
+const dlSplitCtx = document.getElementById('chartDownloadsSplit');
+const chartDlSplit = new Chart(dlSplitCtx,{ type:'bar', data:{ labels: MONTHS, datasets:[ {label:'Android', data: MONTHS.map(m=>DATA[m].downloads.android), backgroundColor:'#1d4ed8', stack:'dl'}, {label:'iOS', data: MONTHS.map(m=>DATA[m].downloads.ios), backgroundColor:'#60a5fa', stack:'dl'} ] }, options:{ responsive:true, scales:{ x:{ stacked:true }, y:{ stacked:true } } });
+
+const splitCashCtx = document.getElementById('chartSplitCash');
+const chartSplitCash = new Chart(splitCashCtx,{ type:'doughnut', data:{ labels:['Efectivo','Tarjeta'], datasets:[{ data:[50,50], backgroundColor:['#f59e0b','#1d4ed8'], borderWidth:0 }]}, options:{ plugins:{ legend:{ position:'bottom' } }, cutout:'55%' } });
+
+const dlAccumCtx = document.getElementById('chartDownloadsAccum');
+const chartDlAccum = new Chart(dlAccumCtx,{ type:'bar', data:{ labels: MONTHS, datasets:[{ label:'Descargas', data: MONTHS.map(m=>DATA[m].downloads.total), backgroundColor:'#1d4ed8', borderRadius:6 }] }, options:{ plugins:{ legend:{ display:false } } });
+
+const resVsDownCtx = document.getElementById('chartResVsDown');
+const chartResVsDown = new Chart(resVsDownCtx,{ type:'line', data:{ labels: MONTHS, datasets:[ {label:'Reservas', data: MONTHS.map(m=>DATA[m].bookings), borderColor:'#1d4ed8', tension:.35, borderWidth:3}, {label:'Descargas', data: MONTHS.map(m=>DATA[m].downloads.total), borderColor:'#f59e0b', tension:.35, borderWidth:3} ] }, options:{ responsive:true } });
+
+const punctCtx = document.getElementById('chartPunctuality');
+const chartPunctuality = new Chart(punctCtx,{ type:'line', data:{ labels: MONTHS, datasets:[{ label:'Puntualidad', data: MONTHS.map(m=>Math.round(DATA[m].ontime*1000)/10), borderColor:'#93c5fd', borderWidth:3, tension:.25 }] }, options:{ scales:{ y:{ min:80, max:100, ticks:{ callback:v=>v+'%' } } } });
+
+const waitCtx = document.getElementById('chartWait');
+const chartWait = new Chart(waitCtx,{ type:'bar', data:{ labels: MONTHS, datasets:[{ label:'Espera (min)', data: MONTHS.map(m=>DATA[m].wait), backgroundColor:'#0ea5e9', borderRadius:6 }] }, options:{ plugins:{ legend:{ display:false } } });
+
+// --------------- Update by month ---------------
+function updateMonth(key){
+  const m = DATA[key];
+  setKpis(key);
+  document.getElementById('dlAndroid').textContent = fmt(m.downloads.android);
+  document.getElementById('dliOS').textContent = fmt(m.downloads.ios);
+  document.getElementById('prebookAbs').textContent = fmt(Math.round(m.bookings*m.prebookRate));
+  document.getElementById('prebookBase').textContent = `de ${fmt(m.bookings)} totales`;
+  chartPrebook.data.datasets[0].data = [Math.round(m.prebookRate*100), 100-Math.round(m.prebookRate*100)];
+  chartPrebook.update();
+  chartSplitCash.data.datasets[0].data = [Math.round(m.cashShare*100), Math.round((1-m.cashShare)*100)];
+  chartSplitCash.update();
+  document.getElementById('ratioConv').textContent = (m.bookings/Math.max(1,m.downloads.total)).toFixed(2);
+  document.getElementById('punctMonth').textContent = (m.ontime*100).toFixed(1)+'%';
+  document.getElementById('waitMonth').textContent = m.wait+' min';
+  // Insights AIDA
+  const insights = buildInsights(key);
+  const grid = document.getElementById('insightsGrid');
+  grid.innerHTML = '';
+  insights.forEach(i=>{
+    const d = document.createElement('div');
+    d.className='border rounded-2xl p-4 bg-slate-50';
+    d.innerHTML = `<div class="text-xs font-bold uppercase tracking-wide text-blue-700">${i.stage}</div><p class="text-gray-800 mt-1">${i.text}</p>`;
+    grid.appendChild(d);
+  });
+}
+
+// --------------- Tabs ---------------
+const tabs = document.querySelectorAll('#tabs button');
+const panels = {
+  reservas: document.getElementById('panel-reservas'),
+  transacciones: document.getElementById('panel-transacciones'),
+  experiencia: document.getElementById('panel-experiencia'),
+  insights: document.getElementById('panel-insights')
+};
+
+tabs.forEach(btn=>btn.addEventListener('click',()=>{
+  tabs.forEach(b=>b.classList.remove('tab-active'));
+  btn.classList.add('tab-active');
+  Object.values(panels).forEach(p=>p.classList.add('hidden'));
+  panels[btn.dataset.tab].classList.remove('hidden');
+}));
+
+// --------------- Print ---------------
+$('#btnPrint').addEventListener('click',()=>window.print());
+
+// init
+updateMonth(monthSelect.value);
+monthSelect.addEventListener('change', e=>updateMonth(e.target.value));
+</script>
+</body>
+</html>
